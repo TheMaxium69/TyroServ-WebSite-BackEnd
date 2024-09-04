@@ -4,11 +4,20 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
-function getColorByRole(string $prefix)
+function getColorByRole(?string $prefix)
 {
+    if ($prefix === null) {
+        return null;
+    }
+
     $firstTwoChars = substr($prefix, 0, 2);
     if ($firstTwoChars === '&4') {
         return 'red';
@@ -21,47 +30,144 @@ function getColorByRole(string $prefix)
 
 class PlayerController extends AbstractController
 {
-    #[Route('/playerOne', name: 'app_player_one')]
-    public function getPlayerOne(): Response
+    #[Route('/playerOne/{pseudo}', name: 'app_player_one', methods:['GET'])]
+    public function getPlayerOne(string $pseudo): JsonResponse
     {
+        if (empty($pseudo)) {
+            return $this->json(['status' => 'false','why' => 'Undefine Pseudo','data' => null,] );
+        }
 
         /*******
         API CONNECTION
         *******/
 
-        /* Api-GetTyroServ*/
+        /* Api-GetTyroServ */
+        $url_APITYROSERV = 'http://vps214.tyrolium.fr/api-tyroserv/?pseudo=' . $pseudo;
         $client = HttpClient::create();
-        $response = $client->request('GET', 'http://vps214.tyrolium.fr/api-tyroserv/?pseudo=TheMaximeSan');
+        $response = $client->request('GET', $url_APITYROSERV);
         $content = $response->getContent();
-        $dataAPI = json_decode($content, true);
-        if ($dataAPI['status'] !== "ok"){
+        $data_APITYROSERV = json_decode($content, true);
+        if ($data_APITYROSERV['status'] !== "ok"){
             return $this->json(['status' => 'false','why' => 'Err vps214','data' => null,] );
+        }
+        $resultat_APITYROSERV = $data_APITYROSERV['result'];
+        if ($resultat_APITYROSERV['player'] === "no player"){
+            return $this->json(['status' => 'false','why' => 'Player Undefine','data' => null,] );
+        }
+
+        /* Useritium-Externe */
+        $url_USERITIUMSKIN = 'http://useritium.fr/api-externe/?controller=TyroServ&task=getSkinByPseudo&pseudo=' . $pseudo;
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_USERITIUMSKIN);
+        $content = $response->getContent();
+        $data_USERITIUMSKIN = json_decode($content, true);
+        if ($data_USERITIUMSKIN['status'] !== "true"){
+            return $this->json(['status' => 'false','why' => 'Err useritium skin','data' => null,] );
+        }
+        $resultat_USERITIUMSKIN = $data_USERITIUMSKIN['result'];
+
+        if ($resultat_USERITIUMSKIN['skin'] === "vide"){
+            $typeSkin = "base64";
+            $skin = "Minecraft Prenium or No Skin";
+            $requestMinecraftAPISkin = true;
+        } else {
+            $typeSkin = "png";
+            $skin = $resultat_USERITIUMSKIN['skin'];
+            $requestMinecraftAPISkin = false;
+        }
+        $url_USERITIUMCAPE = 'http://useritium.fr/api-externe/?controller=TyroServ&task=getCapeByPseudo&pseudo=' . $pseudo;
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_USERITIUMCAPE);
+        $content = $response->getContent();
+        $data_USERITIUMCAPE = json_decode($content, true);
+        if ($data_USERITIUMCAPE['status'] !== "true"){
+            return $this->json(['status' => 'false','why' => 'Err useritium cape','data' => null,] );
+        }
+        $idCapeSelected = $data_USERITIUMCAPE['result']['cape'];
+
+        /* Api-TyroModCape */
+        $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_TYROMODCAPE);
+        $content = $response->getContent();
+        $data_TYROMODCAPE = json_decode($content, true);
+        if ($data_TYROMODCAPE === []) {
+            return $this->json(['status' => 'false', 'why' => 'Err tyromod cape', 'data' => null,]);
+        }
+
+        /* API MINECRAFT OFFICIEL */
+        $url_MINECRAFTUUID = 'https://api.mojang.com/users/profiles/minecraft/'. $pseudo ;
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_MINECRAFTUUID);
+        $code = $response->getStatusCode();
+        if ($code === 200){
+            $content = $response->getContent();
+            $data_MINECRAFTUUID = json_decode($content, true);
+            if (!empty($data_MINECRAFTUUID['errorMessage'])) {
+                $uuidMinecraft = "No prenium";
+            } else {
+                $uuidMinecraft = $data_MINECRAFTUUID['id'];
+            }
+        } else {
+            $uuidMinecraft = "No prenium";
+        }
+
+        if ($requestMinecraftAPISkin && $uuidMinecraft !== "No prenium") {
+
+            $url_MINECRAFTSKIN = 'https://sessionserver.mojang.com/session/minecraft/profile/'. $uuidMinecraft ;
+            $client = HttpClient::create();
+            $response = $client->request('GET', $url_MINECRAFTSKIN);
+            $code = $response->getStatusCode();
+            if ($code === 200){
+                $content = $response->getContent();
+                $data_MINECRAFTSKIN = json_decode($content, true);
+                if (!empty($data_MINECRAFTSKIN['errorMessage'])) {
+                    $typeSkin = null;
+                    $skin = null;
+                } else {
+                    $typeSkin = "base64";
+                    $skin = $data_MINECRAFTSKIN['properties'][0]['value'];
+                }
+            } else {
+                $typeSkin = null;
+                $skin = null;
+            }
+
+        } else if ($requestMinecraftAPISkin) {
+            /* Renvoyé le skin de steeve par default*/
+            $typeSkin = null;
+            $skin = null;
         }
 
 
 
-        $dataResultat = $dataAPI['result'];
+
+
+
+
+        /*REPONSE*/
         $dataResponse = [
             "player" => [
-                "pseudo" => $dataResultat['player']['name'],
-                "uuid-tyroserv" => $dataResultat['player']['uuid'],
-                "uuid-minecraft" => 'test',
+                "pseudo" => $resultat_APITYROSERV['player']['name'],
+                "uuid-tyroserv" => $resultat_APITYROSERV['player']['uuid'],
+                "uuid-minecraft" => $uuidMinecraft,
             ],
             "faction" => [
-                "id" => $dataResultat['faction']['id'],
-                "name" => $dataResultat['faction']['name']
+                "id" => $resultat_APITYROSERV['faction']['id'] ?? null,
+                "name" => $resultat_APITYROSERV['faction']['name'] ?? null
             ],
             "role" => [
-                'name' => $dataResultat['roles'][0]['displayName'],
-                'color' => getColorByRole($dataResultat['roles'][0]['prefix']),
+                'name' => $resultat_APITYROSERV['roles'][0]['displayName'] ?? null,
+                'color' => getColorByRole($resultat_APITYROSERV['roles'][0]['prefix'] ?? null) ,
             ],
-            "money" => $dataResultat['money']['wallet'],
+            "money" => $resultat_APITYROSERV['money']['wallet'],
             'skin' => [
-                'base64' => 'test',
-                'slim' => false
+                'type' => $typeSkin, /* base64 or png */
+                'skin' => $skin,
+                'slim' => $resultat_USERITIUMSKIN['slim']
             ],
             'capes' => [
-                'tyroserv' => [],
+                'tyroserv' => $data_TYROMODCAPE,
                 'minecraft' => [],
                 'optifine' => []
             ],
@@ -77,40 +183,6 @@ class PlayerController extends AbstractController
             ]
         );
     }
-
-
-
-    /*
-    {
-    "status": "ok",
-    "message": "Information de TheMaximeSan",
-    "result": {
-        "player": {
-            "uuid": "03beaaca-7e96-3994-b737-9e0ca3dc15e2",
-            "name": "TheMaximeSan"
-        },
-        "faction": {
-            "id": "14",
-            "name": "TyroFac"
-        },
-        "money": {
-            "wallet": "9500.0"
-        },
-        "roles": [
-            {
-                "name": "fonda",
-                "displayName": "fondateur",
-                "prefix": "&4[Fondateur]&r "
-            }
-        ],
-        }
-    }
-}
-
-
-     */
-
-
 
 
 

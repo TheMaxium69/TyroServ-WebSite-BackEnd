@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -10,7 +11,7 @@ class MainController extends AbstractController
 {
 
     #[Route('/stats', name: 'app_stats')]
-    public function getStats(): Response
+    public function getStats(): JsonResponse
     {
 
 
@@ -33,7 +34,7 @@ class MainController extends AbstractController
 
 
     #[Route('/stat-playerunique', name: 'app_stat_player_unique')]
-    public function getPlayerUnique(): Response
+    public function getPlayerUnique(): JsonResponse
     {
 
         $playerUnique = 100000;
@@ -51,7 +52,7 @@ class MainController extends AbstractController
     }
 
     #[Route('/stat-playerconnected', name: 'app_stat_player_connected')]
-    public function getPlayerConencted(): Response
+    public function getPlayerConencted(): JsonResponse
     {
 
         $playerConnected = 1000;
