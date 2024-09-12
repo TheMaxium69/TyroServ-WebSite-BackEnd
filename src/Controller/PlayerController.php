@@ -28,6 +28,11 @@ function getColorByRole(?string $prefix)
     return 'unset';
 }
 
+function reformeUUID($uuid) {
+    return str_replace('-', '', $uuid);
+}
+
+
 class PlayerController extends AbstractController
 {
     #[Route('/playerOne/{pseudo}', name: 'app_player_one', methods:['GET'])]
@@ -149,7 +154,7 @@ class PlayerController extends AbstractController
         $dataResponse = [
             "player" => [
                 "pseudo" => $resultat_APITYROSERV['player']['name'],
-                "uuid-tyroserv" => $resultat_APITYROSERV['player']['uuid'],
+                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid']),
                 "uuid-minecraft" => $uuidMinecraft,
             ],
             "faction" => [
