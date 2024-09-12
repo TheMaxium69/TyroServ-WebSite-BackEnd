@@ -91,6 +91,16 @@ class PlayerController extends AbstractController
         $idCapeSelected = $data_USERITIUMCAPE['result']['cape'];
 
         /* Api-TyroModCape */
+        $url_TYROMODCAPEWIKI = 'http://vps214.tyrolium.fr/capes/wiki.php';
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_TYROMODCAPEWIKI);
+        $content = $response->getContent();
+        $data_ALL_TYROMODCAPE = json_decode($content, true);
+        if ($data_ALL_TYROMODCAPE === []) {
+            return $this->json(['status' => 'false', 'why' => 'Err tyromod cape', 'data' => null,]);
+        }
+
+
         $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
         $client = HttpClient::create();
         $response = $client->request('GET', $url_TYROMODCAPE);
@@ -98,6 +108,34 @@ class PlayerController extends AbstractController
         $data_TYROMODCAPE = json_decode($content, true);
         if ($data_TYROMODCAPE === []) {
             return $this->json(['status' => 'false', 'why' => 'Err tyromod cape', 'data' => null,]);
+        } else {
+            $resultat_TYROMODCAPE = [];
+
+            foreach ($data_TYROMODCAPE as $capePlayer) {
+                $tempIsCape = "";
+
+                foreach ($data_ALL_TYROMODCAPE as $capeOne) {
+
+                    if($capeOne['id'] == $capePlayer['idCapes']){
+                        $tempIsCape = $capeOne;
+                    }
+
+                }
+
+
+                $resultat_TYROMODCAPE[] = [
+                    "idCapes" => $capePlayer['idCapes'],
+                    "name" => $tempIsCape['name'],
+                    "dateAdded" => $capePlayer['dateAdded'],
+                    "isSelected" => $capePlayer['isSelected'],
+                    "isShop" => $tempIsCape['isShop'],
+                    "capeTexture" => [
+                        "type" => "png", /* base64 or png */
+                        "texture" => $tempIsCape['url'],
+                        "isAnimated" => $tempIsCape['isAnimated'],
+                    ],
+                ];
+            }
         }
 
         /* API MINECRAFT OFFICIEL */
@@ -168,11 +206,11 @@ class PlayerController extends AbstractController
             "money" => $resultat_APITYROSERV['money']['wallet'],
             'skin' => [
                 'type' => $typeSkin, /* base64 or png */
-                'skin' => $skin,
+                'texture' => $skin,
                 'slim' => $resultat_USERITIUMSKIN['slim']
             ],
             'capes' => [
-                'tyroserv' => $data_TYROMODCAPE,
+                'tyroserv' => $resultat_TYROMODCAPE,
                 'minecraft' => [],
                 'optifine' => []
             ],
