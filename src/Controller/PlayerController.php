@@ -155,6 +155,7 @@ class PlayerController extends AbstractController
             $uuidMinecraft = "No prenium";
         }
 
+        $resultat_MINECRAFTCAPE = [];
         if ($requestMinecraftAPISkin && $uuidMinecraft !== "No prenium") {
 
             $url_MINECRAFTSKIN = 'https://sessionserver.mojang.com/session/minecraft/profile/'. $uuidMinecraft ;
@@ -168,8 +169,37 @@ class PlayerController extends AbstractController
                     $typeSkin = null;
                     $skin = null;
                 } else {
-                    $typeSkin = "base64";
-                    $skin = $data_MINECRAFTSKIN['properties'][0]['value'];
+                    $jsonBase64 = $data_MINECRAFTSKIN['properties'][0]['value'];
+
+
+                    $decodedJsonBase64 = base64_decode($jsonBase64);
+                    $skinData = json_decode($decodedJsonBase64, true);
+
+                    if (!empty($skinData['textures']['SKIN'])) {
+                        $typeSkin = "url";
+                        $skin = $skinData['textures']['SKIN']['url'];
+                    } else {
+                        $skin = null;
+                    }
+
+                    if (!empty($skinData['textures']['CAPE'])) {
+
+
+                        $resultat_MINECRAFTCAPE[] = [
+                            "idCapes" => null,
+                            "name" => null,
+                            "dateAdded" => null,
+                            "isSelected" => 1,
+                            "isShop" => null,
+                            "capeTexture" => [
+                                "type" => "url", /* base64 or png */
+                                "texture" => $skinData['textures']['CAPE']['url'],
+                                "isAnimated" => null,
+                            ],
+                        ];
+                    }
+                    
+                    
                 }
             } else {
                 $typeSkin = null;
@@ -211,7 +241,7 @@ class PlayerController extends AbstractController
             ],
             'capes' => [
                 'tyroserv' => $resultat_TYROMODCAPE,
-                'minecraft' => [],
+                'minecraft' => $resultat_MINECRAFTCAPE,
                 'optifine' => []
             ],
             'stats' => []
