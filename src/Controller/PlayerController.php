@@ -113,13 +113,17 @@ class PlayerController extends AbstractController
         }
 
 
-        $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
+        if ($idCapeSelected){
+            $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
+        } else {
+            $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
+        }
         $client = HttpClient::create();
         $response = $client->request('GET', $url_TYROMODCAPE);
         $content = $response->getContent();
         $data_TYROMODCAPE = json_decode($content, true);
-        if ($data_TYROMODCAPE === []) {
-            return $this->json(['status' => 'false', 'why' => 'Err tyromod cape', 'data' => null,]);
+        if ($data_TYROMODCAPE === [] || !$data_TYROMODCAPE) {
+            $resultat_TYROMODCAPE = [];
         } else {
             $resultat_TYROMODCAPE = [];
 
@@ -234,7 +238,7 @@ class PlayerController extends AbstractController
         $dataResponse = [
             "player" => [
                 "pseudo" => $pseudoFinal,
-                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid']) ?? null,
+                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid'] ?? null) ?? null,
                 "uuid-minecraft" => $uuidMinecraft,
             ],
             "faction" => [
