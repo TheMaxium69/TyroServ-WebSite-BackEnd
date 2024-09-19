@@ -28,9 +28,11 @@ function getColorByRole(?string $prefix)
     return 'unset';
 }
 
-function reformeUUID($uuid) {
-    if ($uuid === null) {
+function reformeUUID($uuid, $etat) {
+    if ($uuid === null && $etat === true) {
         return "Never connect";
+    } else if ($uuid === null && $etat === false) {
+        return "Without a Useritium account";
     } else {
         return str_replace('-', '', $uuid);
     }
@@ -45,6 +47,8 @@ class PlayerController extends AbstractController
         if (empty($pseudo)) {
             return $this->json(['status' => 'false','why' => 'Undefine Pseudo','data' => null,] );
         }
+
+        $isTyroServAccount = true;
 
         /*******
         API CONNECTION
@@ -68,7 +72,10 @@ class PlayerController extends AbstractController
             $content = $response->getContent();
             $data_USERITIUMPLAYER = json_decode($content, true);
             if ($data_USERITIUMPLAYER['status'] !== "true"){
-                return $this->json(['status' => 'false','why' => 'Player Undefine','data' => null,] );
+//                return $this->json(['status' => 'false','why' => 'Player Undefine','data' => null,] );
+                $pseudoFinal = $pseudo;
+                $isTyroServAccount = false;
+                $requestMinecraftAPISkin = true;
             } else {
                 $pseudoFinal = $data_USERITIUMPLAYER['result']['pseudo'];
             }
@@ -76,85 +83,88 @@ class PlayerController extends AbstractController
             $pseudoFinal = $resultat_APITYROSERV['player']['name'];
         }
 
-        /* Useritium-Externe */
-        $url_USERITIUMSKIN = 'http://useritium.fr/api-externe/?controller=TyroServ&task=getSkinByPseudo&pseudo=' . $pseudo;
-        $client = HttpClient::create();
-        $response = $client->request('GET', $url_USERITIUMSKIN);
-        $content = $response->getContent();
-        $data_USERITIUMSKIN = json_decode($content, true);
-        if ($data_USERITIUMSKIN['status'] !== "true"){
-            return $this->json(['status' => 'false','why' => 'Err useritium skin','data' => null,] );
-        }
-        $resultat_USERITIUMSKIN = $data_USERITIUMSKIN['result'];
 
-        if ($resultat_USERITIUMSKIN['skin'] === "vide"){
-            $typeSkin = "base64";
-            $skin = "Minecraft Prenium or No Skin";
-            $requestMinecraftAPISkin = true;
-        } else {
-            $typeSkin = "png";
-            $skin = $resultat_USERITIUMSKIN['skin'];
-            $requestMinecraftAPISkin = false;
-        }
-        $url_USERITIUMCAPE = 'http://useritium.fr/api-externe/?controller=TyroServ&task=getCapeByPseudo&pseudo=' . $pseudo;
-        $client = HttpClient::create();
-        $response = $client->request('GET', $url_USERITIUMCAPE);
-        $content = $response->getContent();
-        $data_USERITIUMCAPE = json_decode($content, true);
-        if ($data_USERITIUMCAPE['status'] !== "true"){
-            return $this->json(['status' => 'false','why' => 'Err useritium cape','data' => null,] );
-        }
-        $idCapeSelected = $data_USERITIUMCAPE['result']['cape'];
+        if ($isTyroServAccount){
+            /* Useritium-Externe */
+            $url_USERITIUMSKIN = 'http://useritium.fr/api-externe/?controller=TyroServ&task=getSkinByPseudo&pseudo=' . $pseudo;
+            $client = HttpClient::create();
+            $response = $client->request('GET', $url_USERITIUMSKIN);
+            $content = $response->getContent();
+            $data_USERITIUMSKIN = json_decode($content, true);
+            if ($data_USERITIUMSKIN['status'] !== "true"){
+                return $this->json(['status' => 'false','why' => 'Err useritium skin','data' => null,] );
+            }
+            $resultat_USERITIUMSKIN = $data_USERITIUMSKIN['result'];
 
-        /* Api-TyroModCape */
-        $url_TYROMODCAPEWIKI = 'http://vps214.tyrolium.fr/capes/wiki.php';
-        $client = HttpClient::create();
-        $response = $client->request('GET', $url_TYROMODCAPEWIKI);
-        $content = $response->getContent();
-        $data_ALL_TYROMODCAPE = json_decode($content, true);
-        if ($data_ALL_TYROMODCAPE === []) {
-            return $this->json(['status' => 'false', 'why' => 'Err tyromod cape', 'data' => null,]);
-        }
+            if ($resultat_USERITIUMSKIN['skin'] === "vide"){
+                $typeSkin = "base64";
+                $skin = "Minecraft Prenium or No Skin";
+                $requestMinecraftAPISkin = true;
+            } else {
+                $typeSkin = "png";
+                $skin = $resultat_USERITIUMSKIN['skin'];
+                $requestMinecraftAPISkin = false;
+            }
+            $url_USERITIUMCAPE = 'http://useritium.fr/api-externe/?controller=TyroServ&task=getCapeByPseudo&pseudo=' . $pseudo;
+            $client = HttpClient::create();
+            $response = $client->request('GET', $url_USERITIUMCAPE);
+            $content = $response->getContent();
+            $data_USERITIUMCAPE = json_decode($content, true);
+            if ($data_USERITIUMCAPE['status'] !== "true"){
+                return $this->json(['status' => 'false','why' => 'Err useritium cape','data' => null,] );
+            }
+            $idCapeSelected = $data_USERITIUMCAPE['result']['cape'];
+
+            /* Api-TyroModCape */
+            $url_TYROMODCAPEWIKI = 'http://vps214.tyrolium.fr/capes/wiki.php';
+            $client = HttpClient::create();
+            $response = $client->request('GET', $url_TYROMODCAPEWIKI);
+            $content = $response->getContent();
+            $data_ALL_TYROMODCAPE = json_decode($content, true);
+            if ($data_ALL_TYROMODCAPE === []) {
+                return $this->json(['status' => 'false', 'why' => 'Err tyromod cape', 'data' => null,]);
+            }
 
 
-        if ($idCapeSelected){
-            $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
-        } else {
-            $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
-        }
-        $client = HttpClient::create();
-        $response = $client->request('GET', $url_TYROMODCAPE);
-        $content = $response->getContent();
-        $data_TYROMODCAPE = json_decode($content, true);
-        if ($data_TYROMODCAPE === [] || !$data_TYROMODCAPE) {
-            $resultat_TYROMODCAPE = [];
-        } else {
-            $resultat_TYROMODCAPE = [];
+            if ($idCapeSelected){
+                $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
+            } else {
+                $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
+            }
+            $client = HttpClient::create();
+            $response = $client->request('GET', $url_TYROMODCAPE);
+            $content = $response->getContent();
+            $data_TYROMODCAPE = json_decode($content, true);
+            if ($data_TYROMODCAPE === [] || !$data_TYROMODCAPE) {
+                $resultat_TYROMODCAPE = [];
+            } else {
+                $resultat_TYROMODCAPE = [];
 
-            foreach ($data_TYROMODCAPE as $capePlayer) {
-                $tempIsCape = "";
+                foreach ($data_TYROMODCAPE as $capePlayer) {
+                    $tempIsCape = "";
 
-                foreach ($data_ALL_TYROMODCAPE as $capeOne) {
+                    foreach ($data_ALL_TYROMODCAPE as $capeOne) {
 
-                    if($capeOne['id'] == $capePlayer['idCapes']){
-                        $tempIsCape = $capeOne;
+                        if($capeOne['id'] == $capePlayer['idCapes']){
+                            $tempIsCape = $capeOne;
+                        }
+
                     }
 
+
+                    $resultat_TYROMODCAPE[] = [
+                        "idCapes" => $capePlayer['idCapes'],
+                        "name" => $tempIsCape['name'],
+                        "dateAdded" => $capePlayer['dateAdded'],
+                        "isSelected" => $capePlayer['isSelected'],
+                        "isShop" => $tempIsCape['isShop'],
+                        "capeTexture" => [
+                            "type" => "png", /* base64 or png */
+                            "texture" => $tempIsCape['url'],
+                            "isAnimated" => $tempIsCape['isAnimated'],
+                        ],
+                    ];
                 }
-
-
-                $resultat_TYROMODCAPE[] = [
-                    "idCapes" => $capePlayer['idCapes'],
-                    "name" => $tempIsCape['name'],
-                    "dateAdded" => $capePlayer['dateAdded'],
-                    "isSelected" => $capePlayer['isSelected'],
-                    "isShop" => $tempIsCape['isShop'],
-                    "capeTexture" => [
-                        "type" => "png", /* base64 or png */
-                        "texture" => $tempIsCape['url'],
-                        "isAnimated" => $tempIsCape['isAnimated'],
-                    ],
-                ];
             }
         }
 
@@ -242,7 +252,7 @@ class PlayerController extends AbstractController
         $dataResponse = [
             "player" => [
                 "pseudo" => $pseudoFinal,
-                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid'] ?? null) ?? null,
+                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid'] ?? null, $isTyroServAccount) ?? null,
                 "uuid-minecraft" => $uuidMinecraft,
             ],
             "faction" => [
@@ -257,10 +267,10 @@ class PlayerController extends AbstractController
             'skin' => [
                 'type' => $typeSkin, /* base64 or png */
                 'texture' => $skin,
-                'slim' => $resultat_USERITIUMSKIN['slim']
+                'slim' => $resultat_USERITIUMSKIN['slim'] ?? null
             ],
             'capes' => [
-                'tyroserv' => $resultat_TYROMODCAPE,
+                'tyroserv' => $resultat_TYROMODCAPE ?? [],
                 'minecraft' => $resultat_MINECRAFTCAPE,
                 'optifine' => []
             ],
