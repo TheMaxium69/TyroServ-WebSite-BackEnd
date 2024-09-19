@@ -29,7 +29,11 @@ function getColorByRole(?string $prefix)
 }
 
 function reformeUUID($uuid) {
-    return str_replace('-', '', $uuid);
+    if ($uuid === null) {
+        return "Never connect";
+    } else {
+        return str_replace('-', '', $uuid);
+    }
 }
 
 
