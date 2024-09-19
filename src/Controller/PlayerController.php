@@ -57,7 +57,19 @@ class PlayerController extends AbstractController
         }
         $resultat_APITYROSERV = $data_APITYROSERV['result'];
         if ($resultat_APITYROSERV['player'] === "no player"){
-            return $this->json(['status' => 'false','why' => 'Player Undefine','data' => null,] );
+
+            $url_USERITIUMPLATER = 'http://useritium.fr/api-externe/?controller=TyroServ&task=player&pseudo=' . $pseudo;
+            $client = HttpClient::create();
+            $response = $client->request('GET', $url_USERITIUMPLATER);
+            $content = $response->getContent();
+            $data_USERITIUMPLAYER = json_decode($content, true);
+            if ($data_USERITIUMPLAYER['status'] !== "true"){
+                return $this->json(['status' => 'false','why' => 'Player Undefine','data' => null,] );
+            } else {
+                $pseudoFinal = $data_USERITIUMPLAYER['result']['pseudo'];
+            }
+        } else {
+            $pseudoFinal = $resultat_APITYROSERV['player']['name'];
         }
 
         /* Useritium-Externe */
@@ -221,8 +233,8 @@ class PlayerController extends AbstractController
         /*REPONSE*/
         $dataResponse = [
             "player" => [
-                "pseudo" => $resultat_APITYROSERV['player']['name'],
-                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid']),
+                "pseudo" => $pseudoFinal,
+                "uuid-tyroserv" => reformeUUID($resultat_APITYROSERV['player']['uuid']) ?? null,
                 "uuid-minecraft" => $uuidMinecraft,
             ],
             "faction" => [
@@ -233,7 +245,7 @@ class PlayerController extends AbstractController
                 'name' => $resultat_APITYROSERV['roles'][0]['displayName'] ?? null,
                 'color' => getColorByRole($resultat_APITYROSERV['roles'][0]['prefix'] ?? null) ,
             ],
-            "money" => $resultat_APITYROSERV['money']['wallet'],
+            "money" => $resultat_APITYROSERV['money']['wallet'] ?? null,
             'skin' => [
                 'type' => $typeSkin, /* base64 or png */
                 'texture' => $skin,
