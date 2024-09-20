@@ -288,6 +288,18 @@ class PlayerController extends AbstractController
     }
 
 
+    #[Route('/getAllCape/', name: 'app_cape_all', methods:['GET'])]
+    public function getAllCape(): JsonResponse{
+
+        $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/wiki.php';
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_TYROMODCAPE);
+        $content = $response->getContent();
+        $data_TYROMODCAPE = json_decode($content, true);
+
+        return new JsonResponse($data_TYROMODCAPE);
+    }
+
 
 
 }
