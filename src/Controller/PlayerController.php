@@ -242,11 +242,26 @@ class PlayerController extends AbstractController
             $skin = null;
         }
 
-
-
-
-
-
+        /* API OPTIFINE */
+        $url_OPTIFINECAPE = 'http://s.optifine.net/capes/'. $pseudo .'.png' ;
+        $client = HttpClient::create();
+        $response = $client->request('GET', $url_OPTIFINECAPE);
+        $code = $response->getStatusCode();
+        $resultat_OPTIFINECAPE = [];
+        if ($code === 200) {
+            $resultat_OPTIFINECAPE[] = [
+                "idCapes" => null,
+                "name" => null,
+                "dateAdded" => null,
+                "isSelected" => 1,
+                "isShop" => null,
+                "capeTexture" => [
+                    "type" => "url", /* base64 or png */
+                    "texture" => $url_OPTIFINECAPE,
+                    "isAnimated" => null,
+                ],
+            ];
+        }
 
         /*REPONSE*/
         $dataResponse = [
@@ -272,7 +287,7 @@ class PlayerController extends AbstractController
             'capes' => [
                 'tyroserv' => $resultat_TYROMODCAPE ?? [],
                 'minecraft' => $resultat_MINECRAFTCAPE,
-                'optifine' => []
+                'optifine' => $resultat_OPTIFINECAPE
             ],
             'stats' => []
 
