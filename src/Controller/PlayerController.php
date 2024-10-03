@@ -49,6 +49,7 @@ class PlayerController extends AbstractController
         }
 
         $isTyroServAccount = true;
+        $playerIsPrenium = false;
 
         /*******
         API CONNECTION
@@ -180,13 +181,14 @@ class PlayerController extends AbstractController
                 $uuidMinecraft = "No prenium";
             } else {
                 $uuidMinecraft = $data_MINECRAFTUUID['id'];
+                $playerIsPrenium = true;
             }
         } else {
             $uuidMinecraft = "No prenium";
         }
 
         $resultat_MINECRAFTCAPE = [];
-        if ($requestMinecraftAPISkin && $uuidMinecraft !== "No prenium") {
+        if (($requestMinecraftAPISkin && $uuidMinecraft !== "No prenium") || ($playerIsPrenium == true)) {
 
             $url_MINECRAFTSKIN = 'https://sessionserver.mojang.com/session/minecraft/profile/'. $uuidMinecraft ;
             $client = HttpClient::create();
@@ -196,8 +198,10 @@ class PlayerController extends AbstractController
                 $content = $response->getContent();
                 $data_MINECRAFTSKIN = json_decode($content, true);
                 if (!empty($data_MINECRAFTSKIN['errorMessage'])) {
-                    $typeSkin = null;
-                    $skin = null;
+                    if ($requestMinecraftAPISkin) {
+                        $typeSkin = null;
+                        $skin = null;
+                    }
                 } else {
                     $jsonBase64 = $data_MINECRAFTSKIN['properties'][0]['value'];
 
@@ -206,10 +210,18 @@ class PlayerController extends AbstractController
                     $skinData = json_decode($decodedJsonBase64, true);
 
                     if (!empty($skinData['textures']['SKIN'])) {
-                        $typeSkin = "url";
-                        $skin = $skinData['textures']['SKIN']['url'];
+                        if ($requestMinecraftAPISkin) {
+                            $typeSkin = "url";
+                            $skin = $skinData['textures']['SKIN']['url'];
+                        }
+
+                        $typeIsPrenium = "url";
+                        $TextureIsPrenium = $skinData['textures']['SKIN']['url'];
+//                        $slimIsPrenium = null;
                     } else {
-                        $skin = null;
+                        if ($requestMinecraftAPISkin) {
+                            $skin = null;
+                        }
                     }
 
                     if (!empty($skinData['textures']['CAPE'])) {
@@ -283,6 +295,11 @@ class PlayerController extends AbstractController
                 'type' => $typeSkin, /* base64 or png */
                 'texture' => $skin,
                 'slim' => $resultat_USERITIUMSKIN['slim'] ?? null
+            ],
+            'skinPrenium' => [
+                'type' => $typeIsPrenium ?? null,
+                'texture' => $TextureIsPrenium ?? null,
+                'slim' => $slimIsPrenium ?? null,
             ],
             'capes' => [
                 'tyroserv' => $resultat_TYROMODCAPE ?? [],
