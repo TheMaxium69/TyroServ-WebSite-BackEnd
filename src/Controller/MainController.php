@@ -13,12 +13,10 @@ class MainController extends AbstractController
     #[Route('/stats', name: 'app_stats')]
     public function getStats(): JsonResponse
     {
-
-
+        
         $playerUnique = 100000;
         $playerConnected = 1000;
-
-
+        $playerMax = 1000;
 
         return $this->json(
             [
@@ -26,7 +24,8 @@ class MainController extends AbstractController
                 'why' => 'Succes Request',
                 'data' => [
                     'playerUnique' => $playerUnique,
-                    'playerConnected' => $playerConnected
+                    'playerConnected' => $playerConnected,
+                    'playerMax' => $playerMax
                 ]
             ]
         );
@@ -56,13 +55,15 @@ class MainController extends AbstractController
     {
 
         $playerConnected = 1000;
+        $playerMax = 1000;
 
         return $this->json(
             [
                 'status' => 'true',
                 'why' => 'Succes Request',
                 'data' => [
-                    'playerConnected' => $playerConnected
+                    'playerConnected' => $playerConnected,
+                    'playerMax' => $playerMax
                 ]
             ]
         );
