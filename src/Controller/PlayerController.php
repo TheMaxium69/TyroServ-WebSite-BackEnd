@@ -56,8 +56,8 @@ class PlayerController extends AbstractController
         *******/
 
         /* Api-GetTyroServ */
-//        $url_APITYROSERV = 'http://vps214.tyrolium.fr/api-tyroserv/?pseudo=' . $pseudo;
-        $url_APITYROSERV = 'http://127.0.0.1/Api-GetTyroServ//?pseudo=' . $pseudo;
+        $url_APITYROSERV = 'http://vps214.tyrolium.fr/api-tyroserv/?pseudo=' . $pseudo;
+//        $url_APITYROSERV = 'http://127.0.0.1/Api-GetTyroServ//?pseudo=' . $pseudo;
         $client = HttpClient::create();
         $response = $client->request('GET', $url_APITYROSERV);
         $content = $response->getContent();
@@ -118,8 +118,8 @@ class PlayerController extends AbstractController
             $idCapeSelected = $data_USERITIUMCAPE['result']['cape'];
 
             /* Api-TyroModCape */
-//            $url_TYROMODCAPEWIKI = 'http://vps214.tyrolium.fr/capes/wiki.php';
-            $url_TYROMODCAPEWIKI = 'http://127.0.0.1/Api-TyroModCape/wiki.php';
+            $url_TYROMODCAPEWIKI = 'http://vps214.tyrolium.fr/capes/wiki.php';
+//            $url_TYROMODCAPEWIKI = 'http://127.0.0.1/Api-TyroModCape/wiki.php';
             $client = HttpClient::create();
             $response = $client->request('GET', $url_TYROMODCAPEWIKI);
             $content = $response->getContent();
@@ -130,11 +130,11 @@ class PlayerController extends AbstractController
 
 
             if ($idCapeSelected){
-//                $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
-                $url_TYROMODCAPE = 'http://127.0.0.1/Api-TyroModCape/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
+                $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
+//                $url_TYROMODCAPE = 'http://127.0.0.1/Api-TyroModCape/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . $idCapeSelected;
             } else {
-//                $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
-                $url_TYROMODCAPE = 'http://127.0.0.1/Api-TyroModCape/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
+                $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
+//                $url_TYROMODCAPE = 'http://127.0.0.1/Api-TyroModCape/player.php?pseudo='. $pseudo . '&idCapeUseritium=' . '999999999999';
             }
             $client = HttpClient::create();
             $response = $client->request('GET', $url_TYROMODCAPE);
@@ -327,8 +327,8 @@ class PlayerController extends AbstractController
     #[Route('/getAllCape/', name: 'app_cape_all', methods:['GET'])]
     public function getAllCape(): JsonResponse{
 
-//        $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/wiki.php';
-        $url_TYROMODCAPE = 'http://127.0.0.1/Api-TyroModCape/wiki.php';
+        $url_TYROMODCAPE = 'http://vps214.tyrolium.fr/capes/wiki.php';
+//        $url_TYROMODCAPE = 'http://127.0.0.1/Api-TyroModCape/wiki.php';
         $client = HttpClient::create();
         $response = $client->request('GET', $url_TYROMODCAPE);
         $content = $response->getContent();
