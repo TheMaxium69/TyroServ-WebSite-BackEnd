@@ -259,7 +259,7 @@ class PlayerController extends AbstractController
         }
 
         /* API OPTIFINE */
-        $url_OPTIFINECAPE = 'https://s.optifine.net/capes/'. $pseudo .'.png' ;
+        $url_OPTIFINECAPE = 'http://s.optifine.net/capes/'. $pseudo .'.png' ;
         $client = HttpClient::create();
         $response = $client->request('GET', $url_OPTIFINECAPE);
         $code = $response->getStatusCode();
