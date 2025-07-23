@@ -10,6 +10,20 @@ use Symfony\Component\Routing\Annotation\Route;
 class MainController extends AbstractController
 {
 
+    #[Route('/', name: 'index')]
+    public function gethome(): JsonResponse
+    {
+
+        return $this->json(
+            [
+                'status' => 'true',
+                'why' => 'Succes Request',
+                'msg' => 'Bienvenue sur l\'api du site web de TyroServ'
+
+            ]
+        );
+    }
+
     #[Route('/stats', name: 'app_stats')]
     public function getStats(): JsonResponse
     {
